@@ -4,10 +4,10 @@
   "version": "1.0.0",
   "apiLevel": 2,
   "meta": {
-    "name": "conversationNotify",
-    "tagline": "A short tagline that appears below the name",
-    "description": "A longer description that can **use Markdown**",
-    "authors": ["You!"],
-    "source": "https://example.com/"
+    "name": "Conversation Notifier",
+    "tagline": "??",
+    "description": "??",
+    "authors": ["MusicalArtist12"],
+    "source": "https://github.com/MusicalArtist12/conversationNotify"
   }
 }
