@@ -1,29 +1,24 @@
-import { ExtensionWebExports } from "@moonlight-mod/types";
+import {ExtensionWebExports} from "@moonlight-mod/types";
+
+
+// upstream/source: https://git.slonk.ing/slonk/moonlight-extensions/src/branch/main/src/notificationContent/index.tsx
+//
 
 // https://moonlight-mod.github.io/ext-dev/webpack/#patching
 export const patches: ExtensionWebExports["patches"] = [
   {
-    find: /"User Settings",/g,
+    //async function(t,n,i,e,l){var o,u,r,s;
+    find: 'invoke("NOTIFICATIONS_REMOVE_NOTIFICATIONS"',
     replace: {
-      match: /"User Settings",/g,
-      replacement: '"hacked by conversationNotify lol",'
+      match: /showNotification:(require\(.+?|\i),/,
+      replacement: `showNotification:require('conversationNotify_conversation').wrapExpr($1),`
     }
   }
 ];
 
 // https://moonlight-mod.github.io/ext-dev/webpack/#webpack-module-insertion
 export const webpackModules: ExtensionWebExports["webpackModules"] = {
-  entrypoint: {
-    dependencies: [
-      {
-        ext: "conversationNotify",
-        id: "someLibrary"
-      }
-    ],
-    entrypoint: true
-  },
-
-  someLibrary: {
-    // Keep this object, even if it's empty! It's required for the module to be loaded.
+  conversation: {
+    dependencies: []
   }
 };

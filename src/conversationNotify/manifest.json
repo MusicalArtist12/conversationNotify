@@ -9,5 +9,20 @@
     "description": "??",
     "authors": ["MusicalArtist12"],
     "source": "https://github.com/MusicalArtist12/conversationNotify"
+  },
+  "settings": {
+    "configurableDelay": {
+      "displayName": "Time between notifications",
+      "description": "in seconds",
+      "type": "number",
+      "default": 0,
+      "advice": "none"
+    },
+    "ignoredChannels": {
+      "type": "list",
+      "displayName": "Ignored Channels List",
+      "description": "channel ID",
+      "advice": "none"
+    }
   }
 }
