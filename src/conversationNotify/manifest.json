@@ -12,7 +12,7 @@
   },
   "settings": {
     "configurableDelay": {
-      "displayName": "Time between notifications",
+      "displayName": "Cooldown time",
       "description": "in seconds",
       "type": "number",
       "default": 0,
@@ -23,6 +23,11 @@
       "displayName": "Ignored Channels List",
       "description": "channel ID",
       "advice": "none"
+    },
+    "groupMessages": {
+      "type": "boolean",
+      "displayName": "Group Messages during cooldown time",
+      "advice": "reload"
     }
   }
 }
