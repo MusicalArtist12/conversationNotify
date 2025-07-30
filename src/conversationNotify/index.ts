@@ -5,20 +5,13 @@ import {ExtensionWebExports} from "@moonlight-mod/types";
 //
 
 // https://moonlight-mod.github.io/ext-dev/webpack/#patching
-export const patches: ExtensionWebExports["patches"] = [
-  {
-    //async function(t,n,i,e,l){var o,u,r,s;
-    find: 'invoke("NOTIFICATIONS_REMOVE_NOTIFICATIONS"',
-    replace: {
-      match: /showNotification:(require\(.+?|\i),/,
-      replacement: `showNotification:require('conversationNotify_conversation').wrapExpr($1),`
-    }
-  }
-];
+export const patches: ExtensionWebExports["patches"] = [];
 
 // https://moonlight-mod.github.io/ext-dev/webpack/#webpack-module-insertion
 export const webpackModules: ExtensionWebExports["webpackModules"] = {
   conversation: {
-    dependencies: []
-  }
+    dependencies: [{ext: "notificationLib", id: "lib"}],
+    entrypoint: true
+  },
+
 };

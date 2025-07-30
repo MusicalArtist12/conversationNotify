@@ -1,15 +1,16 @@
 {
   "$schema": "https://moonlight-mod.github.io/manifest.schema.json",
   "id": "conversationNotify",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "apiLevel": 2,
   "meta": {
     "name": "Conversation Notifier",
-    "tagline": "??",
-    "description": "??",
+    "tagline": "Too Many notifications!",
+    "description": "*Are you tired of getting a ping for every single message in a group chat or a server, but still want to know when the chat is active?*\nThis extension will buffer notifications sent after an initial message in a group/server chat, and release them in larger batch notifications in a set time interval.\nCan be configured to either buffer notifications or simply block them during the cooldown period.",
     "authors": ["MusicalArtist12"],
     "source": "https://github.com/MusicalArtist12/conversationNotify"
   },
+  "dependencies": ["notificationLib"],
   "settings": {
     "configurableDelay": {
       "displayName": "Cooldown time",
@@ -26,8 +27,10 @@
     },
     "groupMessages": {
       "type": "boolean",
-      "displayName": "Group Messages during cooldown time",
-      "advice": "reload"
+      "displayName": "Buffer Messages during cooldown time",
+      "description": "When enabled, inhibited notifications are buffered and sent in batches once every cooldown period. When disabled, notifications sent during the cooldown period are simply inhibited and will never be shown. Useful for longer cooldown periods if you only want to know when one starts.",
+      "advice": "reload",
+      "default": true
     }
   }
 }

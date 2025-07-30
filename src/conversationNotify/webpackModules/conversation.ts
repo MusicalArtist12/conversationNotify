@@ -1,7 +1,7 @@
-// upstream: https://git.slonk.ing/slonk/moonlight-extensions/src/branch/main/src/notificationContent/webpackModules/notificationOverride.ts
 
 // https://github.com/moonlight-mod/mappings/blob/0a135691c22d1b03d4badcb8a97dd65fa1716729/src/mappings/discord/Constants.ts#L1331
 import { ChannelTypes, MessageTypes } from "@moonlight-mod/wp/discord/Constants";
+import { NotificationCallFunc, InhibitorFn, InhibitorReturn, Wrapper, addInhibitor, NotificationParams } from "@moonlight-mod/wp/notificationLib_lib";
 
 // saves when the last notification was sent
 let active_convs: Map<string, number> = new Map();
@@ -13,6 +13,8 @@ let notificationBatch: Map<string, any[]> = new Map();
 let channelBatched: Map<string, boolean> = new Map();
 
 let groupNotifications = moonlight.getConfigOption<boolean>("conversationNotify", "groupMessages") ?? false;
+
+
 
 function sendMessage(message_data: any, configurableDelay: number) {
     let ignoredChannels = moonlight.getConfigOption<any>("conversationNotify", "ignoredChannels") ?? [];
@@ -47,18 +49,13 @@ function sendMessage(message_data: any, configurableDelay: number) {
     return true;
 }
 
+// calls resolve
 function sendBatchMessage<T>(
-    expr: (
-        icon: string | undefined,
-        title: string,
-        body: string,
-        message_data: any,
-        sound_data: any
-    ) => T,
+    expr: NotificationCallFunc<T>,
     list: any[],
-    icon: string,
+    icon: string | undefined,
     sound_data: any,
-    resolve: (value: unknown) => void
+    resolve: (value: T | null) => void
 ) {
 
     if (list.length > 0) {
@@ -66,7 +63,8 @@ function sendBatchMessage<T>(
         // syntax of title '<username> (channel)'
         let usernames = new Set(list.map((x) => x.title.replace(/\(.+\)/, "").trim()));
 
-        let t = usernames.size + " people talking in " + channel;
+
+        let t = usernames.size + (usernames.size > 1 ? ' people' : ' person') + " talking in " + channel;
 
         let b = "";
         list.forEach((msg) => {
@@ -93,60 +91,53 @@ function sendBatchMessage<T>(
     }
 }
 
-export function wrapExpr<T>(
-    expr: (
-        icon: string | undefined,
-        title: string,
-        body: string,
-        message_data: any,
-        sound_data: any
-    ) => T
-) {
-    return (
-        icon: string,
-        title: string,
-        body: string,
-        message_data: any,
-        sound_data: any
-    ) => {
-        // console.log(body)
-        // console.log(message_data)
+function createTimeoutPromise<T>(expr: NotificationCallFunc<T>, params: NotificationParams) {
+    let { icon, title, body, message_data, sound_data } = params
+    let configurableDelay = moonlight.getConfigOption<number>("conversationNotify", "configurableDelay") ?? 0;
 
-        // console.log(notificationBatch)
-        // console.log(isawaiting)
+    return new Promise<T | null>((resolve) => {
+
+        // console.log('starting timeout')
+        setTimeout(() => {
+            let list = notificationBatch.get(message_data.channel_id) ?? [];
+
+            sendBatchMessage(expr, list, icon, sound_data, resolve)
+            notificationBatch.set(message_data.channel_id, []);
+            channelBatched.set(message_data.channel_id, false);
+
+            // reset notification timer
+            active_convs.set(message_data.channel_id, Date.now());
+
+        }, 1000 * configurableDelay);
+    });
+}
+
+
+
+function entrypoint() {
+    addInhibitor((params: NotificationParams) => {
         let configurableDelay = moonlight.getConfigOption<number>("conversationNotify", "configurableDelay") ?? 0;
 
-        if (configurableDelay == 0 || sendMessage(message_data, configurableDelay)) { // console.log("sending immediately")
-            return expr(icon, title, body, message_data, sound_data);
+        if (configurableDelay == 0 || sendMessage(params.message_data, configurableDelay)) {
+            return new InhibitorReturn(false);
         }
-        else if (groupNotifications) { // append message
+
+        if (groupNotifications) {
+            let { icon, title, body, message_data, sound_data } = params
+
+            // add message to buffer
             let list = notificationBatch.get(message_data.channel_id) ?? [];
             list.push({ title: title, body: body, message_data: message_data });
             notificationBatch.set(message_data.channel_id, list);
 
+            // create timeout if it doesn't exist
             if (!(channelBatched.get(message_data.channel_id) ?? false)) {
                 channelBatched.set(message_data.channel_id, true);
-                // console.log("waiting")
-                return new Promise((resolve) => {
-
-                    // console.log('starting timeout')
-                    setTimeout(() => {
-                        let list = notificationBatch.get(message_data.channel_id) ?? [];
-
-                        sendBatchMessage(expr, list, icon, sound_data, resolve)
-                        notificationBatch.set(message_data.channel_id, []);
-                        channelBatched.set(message_data.channel_id, false);
-
-                        // reset notification timer
-                        active_convs.set(message_data.channel_id, Date.now());
-
-                    }, 1000 * configurableDelay);
-                });
+                return new InhibitorReturn(true, createTimeoutPromise);
             }
         }
-        // console.log('ignoring')
-        return new Promise((resolve) => {
-            resolve(null);
-        });
-    };
+        return new InhibitorReturn(true);
+    }, 99999)
 }
+
+entrypoint();
